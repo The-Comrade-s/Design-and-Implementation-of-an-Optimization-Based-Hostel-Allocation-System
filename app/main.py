@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import os
 import streamlit as st
+
+for k, v in st.secrets.items():
+    os.environ[k] = str(v)
 
 from app.core.database import check_database_connection, init_db
 from app.core.logging_config import configure_logging, get_logger

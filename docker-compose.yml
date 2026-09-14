@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-hos_db}
+    volumes:
+      - hos_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hos_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-hos_user}:${POSTGRES_PASSWORD:-change-me}@db:5432/${POSTGRES_DB:-hos_db}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-in-production}
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      OPTIMIZATION_TIME_LIMIT_SECONDS: ${OPTIMIZATION_TIME_LIMIT_SECONDS:-60}
+    ports:
+      - "8501:8501"
+
+volumes:
+  hos_postgres_data:

@@ -1,0 +1,12 @@
+sqlalchemy>=2.0
+alembic>=1.13
+pydantic>=2.5
+python-dotenv>=1.0
+bcrypt>=4.1
+ortools>=9.9
+pandas>=2.1
+plotly>=5.18
+streamlit>=1.32
+pytest>=8.0
+openpyxl>=3.1
+psycopg2-binary>=2.9

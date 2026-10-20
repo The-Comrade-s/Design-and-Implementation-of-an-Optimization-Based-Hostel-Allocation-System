@@ -8,6 +8,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
+
+# Streamlit pages read related objects (e.g. block.hostel.name) after the
+# session has closed, so load relationships eagerly by default.
+import sqlalchemy.orm as _orm
+
+_orig_relationship = _orm.relationship
+
+
+def _eager_relationship(*args, **kwargs):
+    kwargs.setdefault("lazy", "selectin")
+    return _orig_relationship(*args, **kwargs)
+
+
+_orm.relationship = _eager_relationship
 from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)

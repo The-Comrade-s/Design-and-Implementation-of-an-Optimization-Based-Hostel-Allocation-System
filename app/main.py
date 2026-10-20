@@ -17,10 +17,31 @@ logger = get_logger("main")
 st.set_page_config(page_title="Hostel Optimization System", layout="wide")
 
 
+def _ensure_admin() -> None:
+    email, pwd = os.getenv("ADMIN_EMAIL"), os.getenv("ADMIN_PASSWORD")
+    if not (email and pwd):
+        return
+    from app.core.database import get_session
+    from app.models.user import UserRole
+    from app.repositories.user_repository import UserRepository
+    from app.services.auth_service import register_user
+    with get_session() as s:
+        if not UserRepository(s).get_by_email(email):
+            register_user(s, email, pwd, UserRole.ADMIN)
+
+
+def _seed_demo() -> None:
+    if os.getenv("SEED_DEMO", "").lower() == "true":
+        from scripts.seed_demo_data import main as seed
+        seed()
+
+
 def _bootstrap() -> None:
     if not st.session_state.get("_bootstrapped"):
         try:
             init_db()
+            _ensure_admin()
+            _seed_demo()
             if not check_database_connection():
                 st.error("Database connection failed. Please check configuration.")
                 st.stop()

@@ -45,6 +45,28 @@ class Base(DeclarativeBase):
     pass
 
 
+def _load_all_relationships(session: Session, limit: int = 20000) -> None:
+    """Load every object reachable from the session's objects, so they can
+    still be read (including related objects) after the session is closed."""
+    from sqlalchemy import inspect as sa_inspect
+
+    seen: set[int] = set()
+    queue = list(session.identity_map.values())
+    while queue and len(seen) < limit:
+        obj = queue.pop()
+        if id(obj) in seen:
+            continue
+        seen.add(id(obj))
+        try:
+            for rel in sa_inspect(obj).mapper.relationships:
+                value = getattr(obj, rel.key)
+                if value is None:
+                    continue
+                queue.extend(value if rel.uselist else [value])
+        except Exception:  # noqa: BLE001
+            continue
+
+
 @contextmanager
 def get_session() -> Generator[Session, None, None]:
     """Context-managed database session with commit/rollback handling."""
@@ -52,6 +74,7 @@ def get_session() -> Generator[Session, None, None]:
     try:
         yield session
         session.commit()
+        _load_all_relationships(session)
     except Exception:
         session.rollback()
         raise

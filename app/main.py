@@ -9,6 +9,7 @@ for k, v in st.secrets.items():
 from app.core.database import check_database_connection, init_db
 from app.core.logging_config import configure_logging, get_logger
 from app.ui.login import render_login
+from app.ui.register import render_register
 from app.utils.session import current_email, current_role, is_authenticated, logout_session
 
 configure_logging()
@@ -54,19 +55,20 @@ def _bootstrap() -> None:
 
 def _render_admin() -> None:
     from app.ui.pages import (
-        admin_allocations, admin_applications, admin_dashboard,
+        admin_allocations, admin_applications, admin_bed_requests, admin_dashboard,
         admin_hostels, admin_optimization, admin_priority_rules, admin_reports,
     )
 
     page = st.sidebar.radio(
         "Admin Navigation",
         ["Dashboard", "Hostel Infrastructure", "Students & Applications",
-         "Priority Rules", "Optimization", "Allocation Review", "Reports"],
+         "Bed Requests", "Priority Rules", "Optimization", "Allocation Review", "Reports"],
     )
     pages = {
         "Dashboard": admin_dashboard.render,
         "Hostel Infrastructure": admin_hostels.render,
         "Students & Applications": admin_applications.render,
+        "Bed Requests": admin_bed_requests.render,
         "Priority Rules": admin_priority_rules.render,
         "Optimization": admin_optimization.render,
         "Allocation Review": admin_allocations.render,
@@ -76,10 +78,11 @@ def _render_admin() -> None:
 
 
 def _render_student() -> None:
-    from app.ui.pages import student_allocation, student_application
+    from app.ui.pages import student_allocation, student_application, student_bed_selection
 
-    page = st.sidebar.radio("Student Navigation", ["My Application", "My Allocation"])
+    page = st.sidebar.radio("Student Navigation", ["Choose Bed Space", "My Application", "My Allocation"])
     pages = {
+        "Choose Bed Space": student_bed_selection.render,
         "My Application": student_application.render,
         "My Allocation": student_allocation.render,
     }
@@ -90,7 +93,11 @@ def main() -> None:
     _bootstrap()
 
     if not is_authenticated():
-        render_login()
+        tab_login, tab_register = st.tabs(["Login", "Student Registration"])
+        with tab_login:
+            render_login()
+        with tab_register:
+            render_register()
         return
 
     st.sidebar.markdown(f"**Signed in as:** {current_email()}")
